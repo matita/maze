@@ -1,0 +1,15 @@
+{
+  "name": "maze",
+  "version": "0.1.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "buildjs": "browserify src/app.js -o dist/app.js"
+  },
+  "author": "Matita <matitald@gmail.com>",
+  "license": "ISC",
+  "devDependencies": {
+    "browserify": "^10.2.4"
+  }
+}
