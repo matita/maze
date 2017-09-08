@@ -18,6 +18,8 @@
     <canvas id="canvas"></canvas>
 
     <script src="js/seeded-random.js"></script>
+    <script src="js/room-utils.js"></script>
+    <script src="js/GridCell.js"></script>
     <script>
         function zToN(z) {
             return z >= 0 ? 2*z : -2*z - 1;
@@ -34,8 +36,13 @@
         var canvas = document.getElementById('canvas');
         var ctx = canvas.getContext('2d');
 
+        /*
+        canvas.width = 250; //document.body.clientWidth;
+        canvas.height = 250; //document.body.clientHeight;
+        /*/
         canvas.width = document.body.clientWidth;
         canvas.height = document.body.clientHeight;
+        //*/
 
         var viewportWidth = canvas.width;
         var viewportHeight = canvas.height;
@@ -47,148 +54,6 @@
         var cam = { x: 0, y: 0 };
         var mouse = { x: 0, y: 0, dx: 0, dy: 0 };
         var frame = 0;
-
-
-        class GraphObject {
-            constructor(x, y, width, height) {
-                this.x = x;
-                this.y = y;
-                this.width = width;
-                this.height = height;
-            }
-
-            render(ctx) {
-
-            }
-        }
-
-
-        function lineV(rnd, lines, x, y, height) {
-            var gapY = Math.floor(rnd() * height);
-
-            if (gapY >= 1) {
-                lines.push({
-                    x0: x,
-                    y0: y,
-                    x1: x,
-                    y1: y + gapY
-                });
-            }
-
-            if (gapY + 1 < height) {
-                lines.push({
-                    x0: x,
-                    y0: y + gapY + 1,
-                    x1: x,
-                    y1: y + height
-                });
-            }
-        }
-
-        function lineH(rnd, lines, x, y, width) {
-            var gapX = Math.floor(rnd() * width);
-
-            if (gapX >= 1) {
-                lines.push({
-                    x0: x,
-                    y0: y,
-                    x1: x + gapX,
-                    y1: y
-                });
-            }
-
-            if (gapX + 1 < width) {
-                lines.push({
-                    x0: x + gapX + 1,
-                    y0: y,
-                    x1: x + width,
-                    y1: y
-                });
-            }
-        }
-
-
-        function splitV(rnd, lines, x, y, w, h) {
-            if (w <= 1)
-                return;
-
-            var firstW = 1 + Math.floor(rnd() * (w-1));
-            var lineX = x + firstW;
-            lineV(rnd, lines, lineX, y, h);
-
-            splitRoom(rnd, lines, x, y, firstW, h);
-            splitRoom(rnd, lines, lineX, y, w - firstW, h);
-        }
-
-        function splitH(rnd, lines, x, y, w, h) {
-            if (h <= 1)
-                return;
-
-            var firstH = 1 + Math.floor(rnd() * (h-1));
-            var lineY = y + firstH;
-            lineH(rnd, lines, x, lineY, w);
-
-            splitRoom(rnd, lines, x, y, w, firstH);
-            splitRoom(rnd, lines, x, lineY, w, h - firstH);
-        }
-
-        function splitRoom(rnd, lines, x, y, w, h) {
-            if (w <= 1 || h <= 1)
-                return;
-
-            var maxArea = rnd() * 20;
-            if (w * h <= maxArea)
-                return;
-
-            var isHorizontal = w == h ? Math.floor(rnd() * 2) : w > h;
-            if (isHorizontal)
-                splitV(rnd, lines, x, y, w, h);
-            else
-                splitH(rnd, lines, x, y, w, h);
-        }
-
-
-        class GridCell extends GraphObject
-        {
-            constructor(gridX, gridY, seed) {
-                super(gridX * cellSize, gridY * cellSize, cellSize, cellSize);
-                this.gridX = gridX;
-                this.gridY = gridY;
-                this.seed = seed;
-                this.rnd = SeededRandom(seed).next;
-
-                this.lines;
-            }
-
-            generateMaze() {
-                var gridW = this.width / unitSize;
-                var gridH = this.height / unitSize;
-
-                this.lines = [];
-                
-                lineV(this.rnd, this.lines, gridW, 0, gridH);
-                lineH(this.rnd, this.lines, 0, gridH, gridW);
-
-                splitRoom(this.rnd, this.lines, 0, 0, gridW, gridH);
-            }
-
-            render(ctx) {
-                if (!this.lines)
-                    this.generateMaze();
-
-                super.render(ctx);
-
-                ctx.strokeStyle = 'rgba(0,0,0,.5)';
-                ctx.lineWidth = 2;
-                var self = this;
-                this.lines.forEach(function (line) {
-                    ctx.beginPath();
-                    ctx.moveTo(self.x + line.x0 * unitSize - cam.x, self.y + line.y0 * unitSize - cam.y);
-                    ctx.lineTo(self.x + line.x1 * unitSize - cam.x, self.y + line.y1 * unitSize - cam.y);
-                    ctx.stroke();
-                });
-            }
-        }
 
 
         function updateCells() {
