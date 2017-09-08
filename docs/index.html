@@ -51,7 +51,7 @@
         var unitSize = 20;
 
         var cells = {};
-        var cam = { x: 0, y: 0 };
+        var cam = { x: 0, y: 0, dx: 0, dy: 0 };
         var mouse = { x: 0, y: 0, dx: 0, dy: 0 };
         var frame = 0;
 
@@ -85,11 +85,17 @@
 
 
         function updateCam() {
-            if (!mouse.isDown)
-                return;
+            if (mouse.isDown) {
+                cam.dx = -mouse.dx;
+                cam.dy = -mouse.dy;
+            } else {
+                var camFriction = 0.9;
+                cam.dx *= camFriction;
+                cam.dy *= camFriction;
+            }
 
-            cam.x -= mouse.dx;
-            cam.y -= mouse.dy;
+            cam.x += cam.dx;
+            cam.y += cam.dy;
         }
 
 
