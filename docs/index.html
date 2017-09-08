@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Infinite maze</title>
+    <style>
+        html, body {
+            padding: 0;
+            margin: 0;
+            height: 100%;
+        }
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+
+    <script src="js/seeded-random.js"></script>
+    <script>
+        function zToN(z) {
+            return z >= 0 ? 2*z : -2*z - 1;
+        }
+        
+        function getSeed(x, y) {
+            x = zToN(x);
+            y = zToN(y);
+            var k = x + y;
+            return  k * (k+1) / 2 + x;
+        }
+    </script>
+    <script>
+        var canvas = document.getElementById('canvas');
+        var ctx = canvas.getContext('2d');
+
+        canvas.width = document.body.clientWidth;
+        canvas.height = document.body.clientHeight;
+
+        var viewportWidth = canvas.width;
+        var viewportHeight = canvas.height;
+
+        var cellSize = 400;
+        var unitSize = 20;
+
+        var cells = {};
+        var cam = { x: 0, y: 0 };
+        var mouse = { x: 0, y: 0, dx: 0, dy: 0 };
+        var frame = 0;
+
+
+        class GraphObject {
+            constructor(x, y, width, height) {
+                this.x = x;
+                this.y = y;
+                this.width = width;
+                this.height = height;
+            }
+
+            render(ctx) {
+
+            }
+        }
+
+
+        function lineV(rnd, lines, x, y, height) {
+            var gapY = Math.floor(rnd() * height);
+
+            if (gapY >= 1) {
+                lines.push({
+                    x0: x,
+                    y0: y,
+                    x1: x,
+                    y1: y + gapY
+                });
+            }
+
+            if (gapY + 1 < height) {
+                lines.push({
+                    x0: x,
+                    y0: y + gapY + 1,
+                    x1: x,
+                    y1: y + height
+                });
+            }
+        }
+
+        function lineH(rnd, lines, x, y, width) {
+            var gapX = Math.floor(rnd() * width);
+
+            if (gapX >= 1) {
+                lines.push({
+                    x0: x,
+                    y0: y,
+                    x1: x + gapX,
+                    y1: y
+                });
+            }
+
+            if (gapX + 1 < width) {
+                lines.push({
+                    x0: x + gapX + 1,
+                    y0: y,
+                    x1: x + width,
+                    y1: y
+                });
+            }
+        }
+
+
+        function splitV(rnd, lines, x, y, w, h) {
+            if (w <= 1)
+                return;
+
+            var firstW = 1 + Math.floor(rnd() * (w-1));
+            var lineX = x + firstW;
+            lineV(rnd, lines, lineX, y, h);
+
+            splitRoom(rnd, lines, x, y, firstW, h);
+            splitRoom(rnd, lines, lineX, y, w - firstW, h);
+        }
+
+        function splitH(rnd, lines, x, y, w, h) {
+            if (h <= 1)
+                return;
+
+            var firstH = 1 + Math.floor(rnd() * (h-1));
+            var lineY = y + firstH;
+            lineH(rnd, lines, x, lineY, w);
+
+            splitRoom(rnd, lines, x, y, w, firstH);
+            splitRoom(rnd, lines, x, lineY, w, h - firstH);
+        }
+
+        function splitRoom(rnd, lines, x, y, w, h) {
+            if (w <= 1 || h <= 1)
+                return;
+
+            var maxArea = rnd() * 20;
+            if (w * h <= maxArea)
+                return;
+
+            var isHorizontal = w == h ? Math.floor(rnd() * 2) : w > h;
+            if (isHorizontal)
+                splitV(rnd, lines, x, y, w, h);
+            else
+                splitH(rnd, lines, x, y, w, h);
+        }
+
+
+        class GridCell extends GraphObject
+        {
+            constructor(gridX, gridY, seed) {
+                super(gridX * cellSize, gridY * cellSize, cellSize, cellSize);
+                this.gridX = gridX;
+                this.gridY = gridY;
+                this.seed = seed;
+                this.rnd = SeededRandom(seed).next;
+
+                this.lines;
+            }
+
+            generateMaze() {
+                var gridW = this.width / unitSize;
+                var gridH = this.height / unitSize;
+
+                this.lines = [];
+                
+                lineV(this.rnd, this.lines, gridW, 0, gridH);
+                lineH(this.rnd, this.lines, 0, gridH, gridW);
+
+                splitRoom(this.rnd, this.lines, 0, 0, gridW, gridH);
+            }
+
+            render(ctx) {
+                if (!this.lines)
+                    this.generateMaze();
+
+                super.render(ctx);
+
+                ctx.strokeStyle = 'rgba(0,0,0,.5)';
+                ctx.lineWidth = 2;
+                var self = this;
+                this.lines.forEach(function (line) {
+                    ctx.beginPath();
+                    ctx.moveTo(self.x + line.x0 * unitSize - cam.x, self.y + line.y0 * unitSize - cam.y);
+                    ctx.lineTo(self.x + line.x1 * unitSize - cam.x, self.y + line.y1 * unitSize - cam.y);
+                    ctx.stroke();
+                });
+            }
+        }
+
+
+        function updateCells() {
+            var seenCells = {};
+
+            // create visible cells
+            for (var x = cam.x; x < cam.x + viewportWidth + cellSize; x += cellSize) {
+                for (var y = cam.y; y < cam.y + viewportHeight + cellSize; y += cellSize) {
+                    var gridX = Math.floor(x / cellSize);
+                    var gridY = Math.floor(y / cellSize);
+                    var cellSeed = getSeed(gridX, gridY);
+
+                    var cell = cells[cellSeed];
+                    if (!cell) {
+                        cell = cells[cellSeed] = new GridCell(gridX, gridY, cellSeed);
+                    }
+                    seenCells[cellSeed] = cell;
+                    //return;
+                }
+            }
+
+            // delete hidden cells
+            var allSeeds = Object.keys(cells);
+            allSeeds.forEach(function (s) {
+                if (!seenCells[s])
+                    delete cells[s];
+            })
+        }
+
+
+        function updateCam() {
+            if (!mouse.isDown)
+                return;
+
+            cam.x -= mouse.dx;
+            cam.y -= mouse.dy;
+        }
+
+
+        function update() {
+            updateCam();
+            updateCells();
+        }
+
+
+        function renderGrid(ctx) {
+            for (var s in cells) {
+                var cell = cells[s];
+                cell.render(ctx);
+            }
+        }
+
+        function render(ctx) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = '#eee';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            renderGrid(ctx);
+        }
+
+
+        function moveMouse(e) {
+            mouse.oldX = mouse.x;
+            mouse.oldY = mouse.y;
+            mouse.x = e.clientX;
+            mouse.y = e.clientY;
+            mouse.invalidated = true;
+        }
+
+        function updateInput() {
+            if (mouse.invalidated) {
+                mouse.dx = mouse.x - mouse.oldX;
+                mouse.dy = mouse.y - mouse.oldY;
+                mouse.invalidated = false;
+            } else {
+                mouse.dx = 0;
+                mouse.dx = 0;
+                mouse.oldX = mouse.x;
+                mouse.oldY = mouse.y;
+            }
+        }
+
+
+        function loop() {
+            updateInput();
+            update();
+            render(ctx);
+
+            frame++;
+            requestAnimationFrame(loop);
+        }
+        requestAnimationFrame(loop);
+
+
+        window.onmousedown = function (e) { moveMouse(e); mouse.isDown = true; };
+        window.onmouseup = function (e) { moveMouse(e); mouse.isDown = false; };
+        window.onmousemove = moveMouse;
+    </script>
+</body>
+</html>
