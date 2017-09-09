@@ -174,9 +174,9 @@
         requestAnimationFrame(loop);
 
 
-        window.onmousedown = function (e) { moveMouse(e); mouse.isDown = true; };
-        window.onmouseup = function (e) { moveMouse(e); mouse.isDown = false; };
-        window.onmousemove = moveMouse;
+        window.onmousedown = window.ontouchstart = function (e) { moveMouse(e); mouse.isDown = true; };
+        window.onmouseup = window.ontouchend = function (e) { moveMouse(e); mouse.isDown = false; };
+        window.onmousemove = window.ontouchmove =  moveMouse;
     </script>
 </body>
 </html>
