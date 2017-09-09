@@ -43,14 +43,21 @@ GridCell.prototype.generateMaze = function() {
 };
 
 GridCell.prototype.render = function(ctx) {
-    //if (!this.lines)
-        this.generateMaze();
+    this.generateMaze();
 
     ctx.strokeStyle = 'rgba(0,0,0,.5)';
     ctx.lineWidth = 2;
     
     for (var i = 0; i < this.lines.length; i++) {
         var line = this.lines[i];
+        var dist = LinesUtils.minDistanceToPoint(line, (mouse.worldX - this.x) / unitSize, (mouse.worldY - this.y) / unitSize);
+        var maxDist = 20;
+
+        if (dist > maxDist)
+            continue;
+
+        var alpha = 1 / dist;
+        ctx.strokeStyle = 'rgba(0,0,0,' + alpha + ')';
         ctx.beginPath();
         ctx.moveTo(this.x + line.x0 * unitSize - cam.x, this.y + line.y0 * unitSize - cam.y);
         ctx.lineTo(this.x + line.x1 * unitSize - cam.x, this.y + line.y1 * unitSize - cam.y);

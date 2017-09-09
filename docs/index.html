@@ -19,6 +19,7 @@
 
     <script src="js/seeded-random.js"></script>
     <script src="js/room-utils.js"></script>
+    <script src="js/utils/lines-utils.js"></script>
     <script src="js/GridCell.js"></script>
     <script>
         function zToN(z) {
@@ -47,8 +48,9 @@
         var viewportWidth = canvas.width;
         var viewportHeight = canvas.height;
 
-        var cellSize = 400;
-        var unitSize = 20;
+        var scale = 1;
+        var cellSize = 400 * scale;
+        var unitSize = 20 * scale;
 
         var cells = {};
         var cam = { x: 0, y: 0, dx: 0, dy: 0 };
@@ -116,6 +118,7 @@
         function update() {
             updateCam();
             updateCells();
+            //console.log(mouse.worldX, mouse.worldY)
         }
 
 
@@ -141,6 +144,8 @@
             mouse.oldY = mouse.y;
             mouse.x = e.clientX;
             mouse.y = e.clientY;
+            mouse.worldX = cam.x + mouse.x;
+            mouse.worldY = cam.y + mouse.y;
             mouse.invalidated = true;
         }
 
