@@ -56,6 +56,18 @@
         var frame = 0;
 
 
+        var CellPool = {
+            _pool: [],
+            get: function (gridX, gridY, cellSeed) {
+                var cell = this._pool.pop() || new GridCell();
+                cell.init(gridX, gridY, cellSeed);
+                return cell;
+            },
+            disable: function(cell) {
+                this._pool.push(cell);
+            }
+        }
+
         function updateCells() {
             var seenCells = {};
 
@@ -68,7 +80,7 @@
 
                     var cell = cells[cellSeed];
                     if (!cell) {
-                        cell = cells[cellSeed] = new GridCell(gridX, gridY, cellSeed);
+                        cell = cells[cellSeed] = CellPool.get(gridX, gridY, cellSeed);
                     }
                     seenCells[cellSeed] = cell;
                     //return;
@@ -78,8 +90,10 @@
             // delete hidden cells
             var allSeeds = Object.keys(cells);
             allSeeds.forEach(function (s) {
-                if (!seenCells[s])
+                if (!seenCells[s]) {
+                    CellPool.disable(cells[s]);
                     delete cells[s];
+                }
             })
         }
 

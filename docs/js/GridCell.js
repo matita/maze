@@ -1,4 +1,10 @@
 function GridCell (gridX, gridY, seed) {
+    this.init(gridX, gridY, seed);
+    GridCell.count = (GridCell.count || 0) + 1;
+    console.log('GridCell count', GridCell.count);
+}
+
+GridCell.prototype.init = function (gridX, gridY, seed) {
     this.x = gridX * cellSize;
     this.y = gridY * cellSize;
     this.width = cellSize;
@@ -9,23 +15,35 @@ function GridCell (gridX, gridY, seed) {
     this.seed = seed;
     this.rnd = SeededRandom(seed).next;
 
-    this.lines;
-}
+    this.lines = null;
+    this.addedLines = [];
+};
 
 GridCell.prototype.generateMaze = function() {
-    var gridW = this.width / unitSize;
-    var gridH = this.height / unitSize;
+    if (this.lines) {
+        if (!this._createdLines.length)
+            return;
+
+        var line = this._createdLines.shift();
+        this.lines.push(line);
+        return;
+    }
 
     this.lines = [];
-    
-    RoomUtils.lineV(this.rnd, this.lines, gridW, 0, gridH);
-    RoomUtils.lineH(this.rnd, this.lines, 0, gridH, gridW);
+    this._createdLines = [];
+    var linesList = GridCell.incrementalRender ? this._createdLines : this.lines;
 
-    RoomUtils.splitRoom(this.rnd, this.lines, 0, 0, gridW, gridH);
+    var gridW = this.width / unitSize;
+    var gridH = this.height / unitSize;
+    
+    RoomUtils.lineV(this.rnd, linesList, gridW, 0, gridH);
+    RoomUtils.lineH(this.rnd, linesList, 0, gridH, gridW);
+
+    RoomUtils.splitRoom(this.rnd, linesList, 0, 0, gridW, gridH);
 };
 
 GridCell.prototype.render = function(ctx) {
-    if (!this.lines)
+    //if (!this.lines)
         this.generateMaze();
 
     ctx.strokeStyle = 'rgba(0,0,0,.5)';

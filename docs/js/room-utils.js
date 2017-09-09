@@ -1,5 +1,7 @@
 var RoomUtils = {
-    lineV: function (rnd, lines, x, y, height) {
+    lineV: function (rnd, lines, x, y, height, gapWidth) {
+        if (typeof(gapWidth) === 'undefined')
+            gapWidth = 1;
         var gapY = Math.floor(rnd() * height);
 
         if (gapY >= 1) {
@@ -11,20 +13,22 @@ var RoomUtils = {
             });
         }
 
-        if (gapY + 1 < height) {
+        if (gapY + gapWidth < height) {
             lines.push({
                 x0: x,
-                y0: y + gapY + 1,
+                y0: y + gapY + gapWidth,
                 x1: x,
                 y1: y + height
             });
         }
     },
 
-    lineH: function (rnd, lines, x, y, width) {
+    lineH: function (rnd, lines, x, y, width, gapWidth) {
+        if (typeof(gapWidth) === 'undefined')
+            gapWidth = 1;
         var gapX = Math.floor(rnd() * width);
 
-        if (gapX >= 1) {
+        if (gapX >= gapWidth) {
             lines.push({
                 x0: x,
                 y0: y,
@@ -35,7 +39,7 @@ var RoomUtils = {
 
         if (gapX + 1 < width) {
             lines.push({
-                x0: x + gapX + 1,
+                x0: x + gapX + gapWidth,
                 y0: y,
                 x1: x + width,
                 y1: y
@@ -44,7 +48,7 @@ var RoomUtils = {
     },
 
 
-    splitV: function (rnd, lines, x, y, w, h) {
+    splitV: function (rnd, lines, x, y, w, h, level) {
         if (w <= 1)
             return;
 
@@ -52,12 +56,12 @@ var RoomUtils = {
         var lineX = x + firstW;
         RoomUtils.lineV(rnd, lines, lineX, y, h);
 
-        RoomUtils.splitRoom(rnd, lines, x, y, firstW, h);
-        RoomUtils.splitRoom(rnd, lines, lineX, y, w - firstW, h);
+        RoomUtils.splitRoom(rnd, lines, x, y, firstW, h), level + 1;
+        RoomUtils.splitRoom(rnd, lines, lineX, y, w - firstW, h, level + 1);
     },
 
 
-    splitH: function (rnd, lines, x, y, w, h) {
+    splitH: function (rnd, lines, x, y, w, h, level) {
         if (h <= 1)
             return;
 
@@ -65,23 +69,25 @@ var RoomUtils = {
         var lineY = y + firstH;
         RoomUtils.lineH(rnd, lines, x, lineY, w);
 
-        RoomUtils.splitRoom(rnd, lines, x, y, w, firstH);
-        RoomUtils.splitRoom(rnd, lines, x, lineY, w, h - firstH);
+        RoomUtils.splitRoom(rnd, lines, x, y, w, firstH, level + 1);
+        RoomUtils.splitRoom(rnd, lines, x, lineY, w, h - firstH, level + 1);
     },
 
 
-    splitRoom: function (rnd, lines, x, y, w, h) {
+    splitRoom: function (rnd, lines, x, y, w, h, level) {
         if (w <= 1 || h <= 1)
             return;
 
+        level = level || 0;
+        
         var maxArea = rnd() * 20;
         if (w * h <= maxArea)
             return;
 
         var isHorizontal = w == h ? Math.floor(rnd() * 2) : w > h;
         if (isHorizontal)
-            RoomUtils.splitV(rnd, lines, x, y, w, h);
+            RoomUtils.splitV(rnd, lines, x, y, w, h, level);
         else
-            RoomUtils.splitH(rnd, lines, x, y, w, h);
+            RoomUtils.splitH(rnd, lines, x, y, w, h, level);
     }
 };
