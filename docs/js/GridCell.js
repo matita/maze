@@ -50,7 +50,7 @@ GridCell.prototype.render = function(ctx) {
     
     for (var i = 0; i < this.lines.length; i++) {
         var line = this.lines[i];
-        var dist = LinesUtils.minDistanceToPoint(line, (mouse.worldX - this.x) / unitSize, (mouse.worldY - this.y) / unitSize);
+        var dist = LinesUtils.minDistanceToPoint(line, (cam.centerX - this.x) / unitSize, (cam.centerY - this.y) / unitSize);
         var maxDist = 20;
 
         if (dist > maxDist)
