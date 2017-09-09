@@ -142,11 +142,13 @@
         function moveMouse(e) {
             mouse.oldX = mouse.x;
             mouse.oldY = mouse.y;
-            mouse.x = (e.touches && e.touches[0] && e.touches[0].clientX) || e.clientX;
-            mouse.y = (e.touches && e.touches[0] && e.touches[0].clientY) || e.clientY;
+            mouse.x = (e.touches && e.touches[0] && e.touches[0].clientX) || e.clientX || mouse.x;
+            mouse.y = (e.touches && e.touches[0] && e.touches[0].clientY) || e.clientY || mouse.y;
             mouse.worldX = cam.x + mouse.x;
             mouse.worldY = cam.y + mouse.y;
             mouse.invalidated = true;
+            if (e.touches)
+                e.preventDefault();
         }
 
         function updateInput() {
